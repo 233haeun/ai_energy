@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ECO-GRID SENS | 통합 스마트 에너지 플랫폼 시뮬레이터</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* General Dark System Color Variables */
+            --bg-base: #03050a;
+            --bg-workspace: #080c18;
+            --bg-surface: rgba(18, 26, 47, 0.7);
+            --bg-card: rgba(24, 34, 62, 0.6);
+            --bg-control: rgba(30, 41, 73, 0.9);
+            
+            --border-glow: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(0, 210, 255, 0.3);
+            
+            /* Neon Highlights */
+            --neon-blue: #00d2ff;
+            --neon-blue-glow: rgba(0, 210, 255, 0.35);
+            --neon-green: #00ff88;
+            --neon-green-glow: rgba(0, 255, 136, 0.35);
+            --neon-orange: #ff9d00;
+            --neon-orange-glow: rgba(255, 157, 0, 0.35);
+            --neon-red: #ff3c3c;
+            --neon-red-glow: rgba(255, 60, 60, 0.35);
+            
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #4b5563;
+            
+            --font-outfit: 'Outfit', 'Noto Sans KR', sans-serif;
+            --font-inter: 'Inter', 'Noto Sans KR', sans-serif;
+            
+            /* State variables */
+            --flow-color: var(--neon-green);
+            --flow-glow: var(--neon-green-glow);
+            --flow-speed: 2.2s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-inter);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 210, 255, 0.02) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(0, 255, 136, 0.02) 0%, transparent 45%);
+        }
+
+        /* ------------------ TOP GLOBAL SELECTOR BAR ------------------ */
+        .global-header {
+            background: rgba(6, 9, 19, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-green));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-family: var(--font-outfit);
+            color: #000;
+            box-shadow: 0 0 12px rgba(0, 210, 255, 0.4);
+        }
+
+        .brand-text h1 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            font-family: var(--font-outfit);
+            letter-spacing: 0.2px;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text p {
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+        }
+
+        /* Platform Switcher Buttons */
+        .platform-switcher {
+            display: flex;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glow);
+            padding: 4px;
+            border-radius: 12px;
+            gap: 4px;
+        }
+
+        .switcher-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .switcher-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .switcher-btn.active {
+            background: var(--bg-control);
+            color: var(--neon-blue);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(0, 210, 255, 0.15);
+        }
+
+        /* ------------------ MAIN WORKSPACE GRID ------------------ */
+        .workspace-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 340px; /* Left Platform Viewer | Right Simulator Controller */
+            height: calc(100vh - 58px);
+            overflow: hidden;
+        }
+
+        .platform-viewer {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+            background: var(--bg-workspace);
+            position: relative;
+        }
+
+        /* ------------------ 📱 EV USER MOBILE APP SIMULATOR ------------------ */
+        .phone-mockup-wrapper {
+            width: 360px;
+            height: 740px;
+            background-color: #080c18;
+            border-radius: 36px;
+            border: 9px solid #161f33;
+            box-shadow: 
+                0 0 0 1.5px rgba(255, 255, 255, 0.05),
+                0 20px 50px -10px rgba(0, 0, 0, 0.9),
+                0 0 30px rgba(0, 210, 255, 0.08);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .phone-notch {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90px;
+            height: 22px;
+            background-color: #000;
+            border-radius: 12px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .notch-camera {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #0c1020;
+            margin-right: 42px;
+        }
+
+        .notch-dot {
+            width: 5px;
+            height: 5px;
+            background-color: var(--neon-green);
+            border-radius: 50%;
+            box-shadow: 0 0 4px var(--neon-green);
+        }
+
+        .notch-dot.alert {
+            background-color: var(--neon-red);
+            box-shadow: 0 0 5px var(--neon-red);
+            animation: pulse-red-dot 0.6s infinite alternate;
+        }
+
+        .phone-status-bar {
+            height: 34px;
+            padding: 10px 16px 0 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: transparent;
+            font-size: 0.68rem;
+            color: #fff;
+            font-weight: 600;
+            z-index: 999;
+            flex-shrink: 0;
+        }
+
+        .phone-battery-border {
+            width: 18px;
+            height: 9px;
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 2.5px;
+            padding: 0.8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .phone-battery-fill {
+            width: 77%;
+            height: 100%;
+            background-color: var(--neon-green);
+            border-radius: 1px;
+            transition: all 0.5s ease;
+        }
+
+        /* Inside Mobile app shell */
+        .phone-header {
+            height: 48px;
+            padding: 0 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-glow);
+            background: rgba(8, 12, 24, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 900;
+            flex-shrink: 0;
+        }
+
+        .phone-header-title {
+            font-family: var(--font-outfit);
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .phone-header-sub {
+            font-size: 0.58rem;
+            color: var(--text-secondary);
+        }
+
+        .phone-connector-badge {
+            padding: 4px 8px;
+            border-radius: 10px;
+            border: 1px solid var(--neon-green);
+            background: rgba(0, 255, 136, 0.05);
+            font-size: 0.58rem;
+            font-weight: bold;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .phone-body {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 12px 12px 64px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .phone-tab-bar {
+            flex-direction: row;
+            padding: 3px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            gap: 3px;
+        }
+
+        .phone-tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 6px;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .phone-tab-btn.active {
+            background: rgba(30, 41, 73, 0.8);
+            color: var(--neon-blue);
+            font-weight: 700;
+        }
+
+        /* Glass Cards inside phone */
+        .phone-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .phone-card-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* Battery progress view */
+        .phone-soc-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .phone-soc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .phone-soc-pct {
+            font-size: 1.85rem;
+            font-weight: 800;
+            font-family: var(--font-outfit);
+            color: #fff;
+        }
+
+        .phone-soc-cap {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+        }
+
+        .phone-soc-track {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phone-soc-fill {
+            height: 100%;
+            background-color: var(--neon-blue);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .phone-soc-protect-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            backgroundColor: var(--neon-red);
+            z-index: 10;
+        }
+
+        .phone-soc-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.58rem;
+            color: var(--text-secondary);
+        }
+
+        .phone-profit-banner {
+            background: rgba(0, 255, 136, 0.04);
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .phone-profit-amount {
+            font-size: 1.35rem;
+            font-weight: 800;
+            font-family: var(--font-outfit);
+            color: #fff;
+            margin-top: 2px;
+        }
+
+        .phone-schedule-item {
+            background: rgba(255,255,255,0.015);
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .phone-schedule-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .phone-schedule-time {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .phone-badge-type {
+            font-size: 0.55rem;
+            font-weight: bold;
+            padding: 1px 4px;
+            border-radius: 3px;
+            color: #fff;
+        }
+
+        .phone-badge-charge { background: rgba(0, 255, 136, 0.1); color: var(--neon-green); border: 0.5px solid rgba(0, 255, 136, 0.2); }
+        .phone-badge-discharge { background: rgba(255, 157, 0, 0.1); color: var(--neon-orange); border: 0.5px solid rgba(255, 157, 0, 0.2); }
+
+        /* Toggles inside phone */
+        .phone-toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .phone-toggle-label {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .phone-toggle-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .phone-toggle-desc {
+            font-size: 0.55rem;
+            color: var(--text-secondary);
+            margin-top: 1px;
+            line-height: 1.3;
+        }
+
+        .phone-slider-track {
+            height: 4px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 2px;
+            position: relative;
+            margin-top: 6px;
+        }
+
+        .phone-slider-fill {
+            height: 100%;
+            background-color: var(--neon-green);
+            border-radius: 2px;
+        }
+
+        .phone-slider-knob {
+            position: absolute;
+            top: -4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #fff;
+            border: 1.5px solid var(--neon-green);
+            margin-left: -6px;
+        }
+
+        .phone-slider-values {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+            margin-top: 10px;
+        }
+
+        .phone-slider-btn {
+            flex: 1;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 6px;
+            padding: 4px 0;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .phone-slider-btn.active {
+            border-color: var(--neon-green);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .phone-slider-btn text {
+            font-size: 0.6rem;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* ------------------ 💻 FACTORY WEB CONSOLE DASHBOARD ------------------ */
+        .factory-web-container {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .factory-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .web-card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .web-card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            padding-bottom: 10px;
+        }
+
+        .web-card-title svg {
+            width: 16px;
+            height: 16px;
+            color: var(--neon-blue);
+        }
+
+        /* 3-Month Price Prediction Layout */
+        .pred-bars-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .pred-bar-item {
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pred-bar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+        }
+
+        .pred-bar-metrics {
+            display: flex;
+            gap: 12px;
+            color: var(--text-secondary);
+        }
+
+        .pred-bar-chart-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .pred-bar-track {
+            width: 100%;
+            height: 10px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .pred-bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 1s ease;
+        }
+
+        .pred-bar-fill.normal { background: linear-gradient(to right, rgba(0, 210, 255, 0.2), var(--neon-blue)); }
+        .pred-bar-fill.warn { background: linear-gradient(to right, rgba(255, 60, 60, 0.2), var(--neon-red)); box-shadow: 0 0 6px var(--neon-red-glow); }
+
+        .pred-recommendation-box {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            background: rgba(0,0,0,0.25);
+            border-radius: 6px;
+            padding: 8px 10px;
+            line-height: 1.4;
+            border-left: 2px solid var(--neon-blue);
+        }
+
+        /* Web Toggle switch */
+        .web-toggle-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.015);
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 10px;
+            font-size: 0.75rem;
+        }
+
+        /* Web ESS capacity bar */
+        .web-ess-gauge-card {
+            background: rgba(255,255,255,0.015);
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .web-ess-track {
+            height: 16px;
+            background-color: rgba(0,0,0,0.4);
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .web-ess-fill {
+            height: 100%;
+            background: linear-gradient(to right, rgba(0,210,255,0.2), var(--neon-blue));
+            border-radius: 6px;
+            transition: all 0.5s ease;
+        }
+
+        .web-ess-target-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: var(--neon-orange);
+            z-index: 10;
+        }
+
+        .web-ess-btn-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .web-ess-btn {
+            flex: 1;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.06);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            padding: 4px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .web-ess-btn.active {
+            border-color: var(--neon-orange);
+            color: var(--neon-orange);
+            background: rgba(255, 157, 0, 0.05);
+            font-weight: bold;
+        }
+
+        /* Circular gauge widget */
+        .web-safety-summary {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .web-gauge-ring {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #0c1224;
+            border: 3.5px solid var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green-glow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-outfit);
+            flex-shrink: 0;
+            transition: all 0.4s ease;
+        }
+
+        .web-gauge-ring-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .web-gauge-ring-lbl {
+            font-size: 0.5rem;
+            font-weight: 700;
+            color: var(--neon-green);
+            transform: scale(0.9);
+        }
+
+        .web-safety-details {
+            font-size: 0.68rem;
+            line-height: 1.4;
+        }
+
+        .web-alert-banner {
+            display: flex;
+            gap: 8px;
+            background: rgba(0, 255, 136, 0.04);
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.68rem;
+            line-height: 1.4;
+            transition: all 0.4s ease;
+        }
+
+        .web-alert-banner.active-warning {
+            background: rgba(255, 60, 60, 0.06);
+            border-color: rgba(255, 60, 60, 0.25);
+            animation: pulse-border-red-subtle 1.5s infinite alternate;
+        }
+
+        /* ------------------ 💻 SAFETY ALERT WEB MODAL ------------------ */
+        .web-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(3, 5, 10, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .web-modal-box {
+            width: 480px;
+            background: #0d1326;
+            border: 2px solid var(--neon-orange);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 0 25px var(--neon-orange-glow);
+            color: #fff;
+            animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .web-modal-box.critical {
+            border-color: var(--neon-red);
+            box-shadow: 0 0 25px var(--neon-red-glow);
+        }
+
+        .web-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .web-modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .web-modal-info {
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+
+        .web-modal-label {
+            font-size: 0.58rem;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+        }
+
+        .web-modal-val {
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .web-modal-desc {
+            background: rgba(255, 60, 60, 0.03);
+            border: 1px solid rgba(255, 60, 60, 0.12);
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 0.7rem;
+            line-height: 1.45;
+            margin-bottom: 20px;
+        }
+
+        .web-modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .web-modal-action-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.7rem;
+        }
+
+        .web-modal-btn {
+            background-color: var(--neon-blue);
+            color: #060913;
+            border: none;
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .web-modal-btn.success {
+            background-color: rgba(0, 255, 136, 0.1);
+            border: 0.5px solid var(--neon-green);
+            color: var(--neon-green);
+            cursor: default;
+        }
+
+        /* ------------------ ⚙️ SIMULATOR CONTROLLER SIDEBAR ------------------ */
+        .simulator-controller {
+            background: rgba(6, 9, 19, 0.9);
+            border-left: 1px solid var(--border-glow);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sim-section-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            padding-bottom: 6px;
+        }
+
+        .preset-column {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sim-preset-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 10px 12px;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sim-preset-btn:hover {
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateY(-1px);
+        }
+
+        .sim-preset-btn.active {
+            border-color: var(--btn-accent, var(--neon-blue));
+            background: var(--btn-bg, rgba(0, 210, 255, 0.05));
+        }
+
+        .sim-preset-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sim-preset-desc {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            padding-left: 12px;
+            line-height: 1.3;
+        }
+
+        /* Shared Dashboard Info Card */
+        .sim-info-card {
+            background: rgba(255,255,255,0.015);
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sim-info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+        }
+
+        /* Console */
+        .sim-console-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            min-height: 240px;
+        }
+
+        .sim-console {
+            background: rgba(3, 5, 10, 0.9);
+            border: 1px solid rgba(255,255,255,0.02);
+            border-radius: 10px;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.65rem;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            scroll-behavior: smooth;
+        }
+
+        .sim-log-row {
+            line-height: 1.35;
+            animation: slideIn 0.2s ease-out forwards;
+        }
+
+        .sim-log-time { color: var(--text-muted); margin-right: 4px; }
+        .sim-log-tag { font-weight: bold; margin-right: 4px; }
+        .sim-log-tag.tag-ai { color: var(--neon-blue); }
+        .sim-log-tag.tag-vpp { color: var(--neon-green); }
+        .sim-log-tag.tag-safety { color: var(--neon-orange); }
+        .sim-log-tag.tag-alert { color: var(--neon-red); }
+
+        /* Switches toggle slider css wrapper */
+        .toggle-switch-input {
+            position: relative;
+            display: inline-block;
+            width: 32px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch-input input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-switch-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255,255,255,0.08);
+            transition: .25s;
+            border-radius: 34px;
+            border: 0.5px solid rgba(255,255,255,0.04);
+        }
+
+        .toggle-switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #94a3b8;
+            transition: .25s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-switch-slider {
+            background-color: rgba(0, 210, 255, 0.2);
+            border-color: var(--neon-blue);
+        }
+
+        input:checked + .toggle-switch-slider:before {
+            transform: translateX(14px);
+            background-color: var(--neon-blue);
+            box-shadow: 0 0 4px var(--neon-blue);
+        }
+
+        /* ------------------ COMMON TRANSITIONS ------------------ */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-4px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes pulse-red-dot {
+            from { opacity: 0.4; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse-border-red-subtle {
+            0% { border-color: rgba(255, 60, 60, 0.15); background: rgba(255, 60, 60, 0.02); }
+            100% { border-color: rgba(255, 60, 60, 0.35); background: rgba(255, 60, 60, 0.06); }
+        }
+
+        @keyframes pulse-border-red {
+            0% { box-shadow: 0 0 3px rgba(255, 60, 60, 0.3); border-color: rgba(255, 60, 60, 0.4); }
+            100% { box-shadow: 0 0 10px rgba(255, 60, 60, 0.7); border-color: rgba(255, 60, 60, 1); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1000px) {
+            .workspace-container {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow-y: visible;
+            }
+            .simulator-controller {
+                border-left: none;
+                border-top: 1px solid var(--border-glow);
+                height: auto;
+            }
+            body {
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP GLOBAL BAR -->
+    <header class="global-header">
+        <div class="brand-section">
+            <div class="brand-icon">S</div>
+            <div class="brand-text">
+                <h1>ECO-GRID SENS</h1>
+                <p>스마트 에너지 물가 최적화 & 세이프티 가드 통합 플랫폼</p>
+            </div>
+        </div>
+        
+        <!-- Platform Switcher -->
+        <div class="platform-switcher">
+            <button class="switcher-btn active" id="btn-switch-mobile" onclick="switchPlatform('mobile')">
+                📱 EV 사용자 모바일 앱
+            </button>
+            <button class="switcher-btn" id="btn-switch-web" onclick="switchPlatform('web')">
+                💻 공장 관리자 웹 대시보드
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="workspace-container">
+        
+        <!-- Left Platform Content Viewer -->
+        <main class="platform-viewer" id="platform-viewer-content">
+
+            <!-- ==================== 1. 📱 EV USER MOBILE APP SIMULATOR ==================== -->
+            <div class="phone-mockup-wrapper" id="plat-mobile-view">
+                
+                <!-- Notch -->
+                <div class="phone-notch">
+                    <div class="notch-camera"></div>
+                    <div class="notch-dot" id="phone-notch-dot"></div>
+                </div>
+
+                <!-- Status bar -->
+                <div class="phone-status-bar">
+                    <div id="phone-os-time">17:59</div>
+                    <div style="display:flex; align-items:center; gap: 4px;">
+                        <span id="phone-status-tariff" style="color: var(--neon-green); font-weight: bold;">65원</span>
+                        <div class="phone-battery-border">
+                            <div class="phone-battery-fill" id="phone-battery-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- App Header -->
+                <div class="phone-header">
+                    <div>
+                        <div class="phone-header-title">ECO-GRID SENS</div>
+                        <div class="phone-header-sub">AI Smart Energy Partner</div>
+                    </div>
+                    <div class="phone-connector-badge" id="phone-conn-badge">
+                        <div class="notch-dot" style="width:5px; height:5px; background-color:#00ff88;"></div>
+                        <span>V2G 커넥터 연결됨</span>
+                    </div>
+                </div>
+
+                <!-- App Inner Tabs Switcher -->
+                <div style="padding: 12px 12px 2px 12px;">
+                    <div class="phone-tab-bar">
+                        <button class="phone-tab-btn active" id="p-tab-dash" onclick="phoneSwitchTab('DASHBOARD')">홈 대시보드</button>
+                        <button class="phone-tab-btn" id="p-tab-settings" onclick="phoneSwitchTab('AI_SETTINGS')">AI 스마트 설정</button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Phone Screen body -->
+                <div class="phone-body" id="phone-screen-body">
+                    
+                    <!-- [MOBILE SUB-TAB 1: 홈 대시보드] -->
+                    <div id="phone-view-dash" style="display: flex; flex-direction: column; gap: 10px;">
+                        
+                        <!-- Battery SoC Info -->
+                        <div class="phone-card">
+                            <div class="phone-card-title" style="font-size:0.68rem; color:var(--text-secondary);">실시간 배터리 상태</div>
+                            <div class="phone-soc-container">
+                                <div class="phone-soc-header">
+                                    <span class="phone-soc-pct" id="phone-soc-text">77%</span>
+                                    <span class="phone-soc-cap">59.6 kWh / 77.4 kWh</span>
+                                </div>
+                                <div class="phone-soc-track">
+                                    <div class="phone-soc-fill" id="phone-soc-bar-fill" style="width: 77%;"></div>
+                                    <!-- Safety protect threshold line -->
+                                    <div class="phone-soc-protect-line" id="phone-soc-protect-line" style="left: 30%;"></div>
+                                </div>
+                                <div class="phone-soc-footer">
+                                    <span style="color:var(--neon-red); font-weight:600;" id="phone-soc-protect-lbl">최소 보호 한선: 30%</span>
+                                    <span id="phone-soc-action-lbl" style="color:var(--neon-green); font-weight:600;">완속 충전 중</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Monthly earnings -->
+                        <div class="phone-profit-banner">
+                            <div>
+                                <span style="font-size: 0.58rem; color: var(--neon-green); font-weight: bold;">이번 달 누적 에너지 리워드</span>
+                                <div class="phone-profit-amount" id="phone-profit-val">₩142,800</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 0.52rem; color: var(--text-secondary);">내일 예상 수익</span>
+                                <div style="font-size: 0.72rem; color: var(--neon-green); font-weight: 700; margin-top: 2px;">+₩12,500</div>
+                            </div>
+                        </div>
+
+                        <!-- Charging blocks -->
+                        <div class="phone-card">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 4px;">
+                                <span class="phone-card-title">내일의 최적 충·방전 스케줄</span>
+                                <span style="font-size: 0.55rem; color: var(--neon-blue); font-weight: bold;">AI 연동</span>
+                            </div>
+
+                            <div class="phone-schedule-item">
+                                <div class="phone-schedule-row">
+                                    <span class="phone-schedule-time">12:00 - 14:00</span>
+                                    <div class="phone-badge-type phone-badge-charge">할인 충전 (태양광)</div>
+                                </div>
+                                <p style="font-size:0.58rem; color: var(--text-secondary); line-height: 1.3;">태양광 발전 잉여로 낮 시간 요금 단가가 최대로 인하됩니다.</p>
+                                <div style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.03); padding-top:4px; margin-top:2px; font-size:0.55rem;">
+                                    <span style="color:var(--text-secondary);">적용 예측 단가</span>
+                                    <span style="color:var(--neon-green); font-weight:bold;">65원 / kWh</span>
+                                </div>
+                            </div>
+
+                            <div class="phone-schedule-item" id="phone-v2g-block">
+                                <div class="phone-schedule-row">
+                                    <span class="phone-schedule-time">20:00 - 22:00</span>
+                                    <div class="phone-badge-type phone-badge-discharge" id="phone-v2g-badge">역판매 방전 (V2G)</div>
+                                </div>
+                                <p style="font-size:0.58rem; color: var(--text-secondary); line-height: 1.3;" id="phone-v2g-desc">저녁 수요 피크 구간 계통 지원 방전으로 이득을 창출합니다.</p>
+                                <div style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.03); padding-top:4px; margin-top:2px; font-size:0.55rem;">
+                                    <span style="color:var(--text-secondary);">적용 예측 단가</span>
+                                    <span style="color:var(--neon-orange); font-weight:bold;" id="phone-v2g-tariff">240원 / kWh</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- [MOBILE SUB-TAB 2: AI 스마트 설정] -->
+                    <div id="phone-view-settings" style="display: none; flex-direction: column; gap: 10px;">
+                        
+                        <div class="phone-card">
+                            <div class="phone-card-title">AI 자동 제어 토글</div>
+                            
+                            <div class="phone-toggle-row">
+                                <div class="phone-toggle-label">
+                                    <div class="phone-toggle-title">잉여 태양광 초저가 충전</div>
+                                    <span class="phone-toggle-desc">출력제어 예상 시 70% 할인 충전을 자동 예약합니다.</span>
+                                </div>
+                                <label class="toggle-switch-input">
+                                    <input type="checkbox" id="phone-opt-charge" checked onchange="logPhoneAction('태양광 할인충전 연동')">
+                                    <span class="toggle-switch-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="phone-toggle-row">
+                                <div class="phone-toggle-label">
+                                    <div class="phone-toggle-title">피크 타임 V2G 자동 역판매</div>
+                                    <span class="phone-toggle-desc">저녁 피크 시간대 배터리 전력을 자동 방전 판매합니다.</span>
+                                </div>
+                                <label class="toggle-switch-input">
+                                    <input type="checkbox" id="phone-opt-v2g" checked onchange="logPhoneAction('V2G 자동 역판매 연동')">
+                                    <span class="toggle-switch-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="phone-toggle-row">
+                                <div class="phone-toggle-label">
+                                    <div class="phone-toggle-title">배터리 안전 세이프 가드</div>
+                                    <span class="phone-toggle-desc">설정해둔 최소 배터리 용량 이하 방전을 자동 차단합니다.</span>
+                                </div>
+                                <label class="toggle-switch-input">
+                                    <input type="checkbox" id="phone-opt-protect" checked onchange="logPhoneAction('배터리 하한선 세이프 가드')">
+                                    <span class="toggle-switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Battery safety slider -->
+                        <div class="phone-card">
+                            <div class="phone-card-title">배터리 보호 하한선 (최저 SoC)</div>
+                            <span class="phone-toggle-desc">V2G 거래 시 출퇴근 주행거리를 확보하기 위해 남겨둘 배터리 양입니다.</span>
+                            
+                            <div class="phone-soc-container" style="margin-top:4px;">
+                                <div class="phone-slider-track">
+                                    <div class="phone-slider-fill" id="phone-slider-fill-width" style="width: 30%;"></div>
+                                    <div class="phone-slider-knob" id="phone-slider-knob-left" style="left: 30%;"></div>
+                                </div>
+                                
+                                <div class="phone-slider-values">
+                                    <button class="phone-slider-btn" id="ps-btn-20" onclick="phoneSetLimit(20)"><text>20%</text></button>
+                                    <button class="phone-slider-btn active" id="ps-btn-30" onclick="phoneSetLimit(30)"><text>30%</text></button>
+                                    <button class="phone-slider-btn" id="ps-btn-40" onclick="phoneSetLimit(40)"><text>40%</text></button>
+                                    <button class="phone-slider-btn" id="ps-btn-50" onclick="phoneSetLimit(50)"><text>50%</text></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Commute reserve settings -->
+                        <div class="phone-card">
+                            <div class="phone-card-title">출퇴근 고정 시간 입력</div>
+                            <span class="phone-toggle-desc">차량의 회사 주차 시간을 AI 스케줄러가 정밀 계산합니다.</span>
+                            
+                            <div style="display:flex; gap: 8px; margin-top: 6px;">
+                                <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                                    <span style="font-size:0.55rem; color:var(--text-secondary);">오전 출근 시간</span>
+                                    <input type="text" value="08:30" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); padding:6px; color:#fff; border-radius:6px; font-size:0.7rem; font-weight:bold; text-align:center;">
+                                </div>
+                                <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                                    <span style="font-size:0.55rem; color:var(--text-secondary);">오후 퇴근 시간</span>
+                                    <input type="text" value="18:30" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); padding:6px; color:#fff; border-radius:6px; font-size:0.7rem; font-weight:bold; text-align:center;">
+                                </div>
+                            </div>
+                            
+                            <button onclick="alert('출퇴근 패턴 학습 모델에 반영되었습니다.')" style="margin-top:8px; background:var(--neon-blue); border:none; padding:8px; border-radius:8px; color:#060913; font-size:0.68rem; font-weight:bold; cursor:pointer;">
+                                설정 저장 및 AI 스케줄링 갱신
+                            </button>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- Bottom Swipe line -->
+                <div style="width: 100px; height: 3.5px; background: rgba(255, 255, 255, 0.25); border-radius: 2px; position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 1000;"></div>
+                
+                <!-- APP PUSH ALARM DIALOG (Simulated React Native Modal) -->
+                <div class="web-modal-overlay" id="phone-promo-modal" style="display: none; position: absolute; background: rgba(3,5,10,0.85); padding: 16px;">
+                    <div class="phone-card" style="background:#0d1326; border-color: rgba(0, 210, 255, 0.25); width: 100%; border-radius: 16px; padding: 18px; align-items: center; text-align: center; gap: 10px;">
+                        <span style="font-size: 1.5rem;">💡</span>
+                        <strong style="font-size: 0.85rem; color:#fff;">AI 스마트 충전 제안</strong>
+                        <p style="font-size: 0.62rem; color: var(--text-secondary); line-height: 1.45;">
+                            내일 <span style="font-weight:bold; color:#fff;">오전 10시~오후 2시</span> 사이 전라/제주 지역의 태양광 과잉 발전으로 출력제어가 예측됩니다.{"\n\n"}
+                            차량이 사내 주차장에 주차될 확률은 92%입니다. 충전 단가를 <span style="color:var(--neon-green); font-weight:bold;">70% 할인(65원/kWh)</span> 적용하여 예약하시겠습니까?
+                        </p>
+                        <div style="display: flex; gap: 8px; width: 100%; margin-top: 6px;">
+                            <button onclick="declinePhonePromo()" style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:6px; color:var(--text-secondary); font-size:0.65rem; font-weight:bold; cursor:pointer;">보류</button>
+                            <button onclick="approvePhonePromo()" style="flex:2; background:var(--neon-blue); border:none; padding:8px; border-radius:6px; color:#060913; font-size:0.65rem; font-weight:bold; cursor:pointer;">스케줄 예약</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ==================== 2. 💻 FACTORY WEB CONSOLE DASHBOARD ==================== -->
+            <div class="factory-web-container" id="plat-web-view" style="display: none;">
+                
+                <div class="factory-grid">
+                    
+                    <!-- Left Columns (2 Span): Chart & VPP controls -->
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        
+                        <!-- A. Price Prediction Chart Card -->
+                        <section class="web-card">
+                            <div class="web-card-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                                <span>글로벌 원자재 환율 연동 3개월 전기 요금 예측 AI</span>
+                                <span style="font-size: 0.65rem; background: rgba(0,210,255,0.08); border: 1px solid rgba(0,210,255,0.2); color: var(--neon-blue); padding: 2px 8px; border-radius: 10px; margin-left: auto;">AI 예측 신뢰도: 85%</span>
+                            </div>
+
+                            <div class="pred-bars-stack">
+                                <!-- Month 1 -->
+                                <div class="pred-bar-item">
+                                    <div class="pred-bar-header">
+                                        <strong style="color:var(--neon-blue);">7월 예측 (1개월 후)</strong>
+                                        <div class="pred-bar-metrics">
+                                            <span>달러환율: ₩1,375.00</span>
+                                            <span>WTI유가: $82.20</span>
+                                            <span>감성 분석: <span style="color:var(--neon-green);">+0.10</span></span>
+                                        </div>
+                                    </div>
+                                    <div class="pred-bar-chart-container">
+                                        <div style="display:flex; justify-content:space-between; font-size:0.68rem;">
+                                            <span style="color:var(--text-secondary);">피크 시간 최고 단가 예측</span>
+                                            <span>224.5원 / kWh</span>
+                                        </div>
+                                        <div class="pred-bar-track">
+                                            <div class="pred-bar-fill normal" style="width: 74%;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="pred-recommendation-box">
+                                        💡 <strong>포트폴리오 제안:</strong> 호남 지사 ESS의 가용 충전 용량의 60%를 낮 시간 덤핑 전력으로 확보하십시오.
+                                    </div>
+                                </div>
+
+                                <!-- Month 2 -->
+                                <div class="pred-bar-item">
+                                    <div class="pred-bar-header">
+                                        <strong style="color:var(--neon-blue);">8월 예측 (2개월 후)</strong>
+                                        <div class="pred-bar-metrics">
+                                            <span>달러환율: ₩1,400.00</span>
+                                            <span>WTI유가: $86.40</span>
+                                            <span>감성 분석: <span style="color:var(--neon-orange);">-0.15</span></span>
+                                        </div>
+                                    </div>
+                                    <div class="pred-bar-chart-container">
+                                        <div style="display:flex; justify-content:space-between; font-size:0.68rem;">
+                                            <span style="color:var(--text-secondary);">피크 시간 최고 단가 예측</span>
+                                            <span>248.0원 / kWh</span>
+                                        </div>
+                                        <div class="pred-bar-track">
+                                            <div class="pred-bar-fill normal" style="width: 82%;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="pred-recommendation-box">
+                                        💡 <strong>포트폴리오 제안:</strong> 원자재 유가 인상 영향 본격화. 야간 방전 V2G 계약률을 20% 상향 권고합니다.
+                                    </div>
+                                </div>
+
+                                <!-- Month 3 -->
+                                <div class="pred-bar-item">
+                                    <div class="pred-bar-header">
+                                        <strong style="color:var(--neon-red);">9월 예측 (3개월 후)</strong>
+                                        <div class="pred-bar-metrics">
+                                            <span>달러환율: ₩1,425.00</span>
+                                            <span>WTI유가: $90.60</span>
+                                            <span>감성 분석: <span style="color:var(--neon-red);">-0.40</span></span>
+                                        </div>
+                                    </div>
+                                    <div class="pred-bar-chart-container">
+                                        <div style="display:flex; justify-content:space-between; font-size:0.68rem;">
+                                            <span style="color:var(--text-secondary);">피크 시간 최고 단가 예측</span>
+                                            <span style="color:var(--neon-red); font-weight: bold;">278.4원 / kWh (+20% 폭등 예정)</span>
+                                        </div>
+                                        <div class="pred-bar-track">
+                                            <div class="pred-bar-fill warn" style="width: 93%;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="pred-recommendation-box" style="border-left-color: var(--neon-red);">
+                                        💡 <strong>포트폴리오 제안:</strong> 피크 가격 20% 폭등 구간 진입. 주차된 통근버스와 대용량 ESS 충전 스케줄을 낮 시간으로 전량 이전하십시오.
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- B. VPP Control Panel Card -->
+                        <section class="web-card">
+                            <div class="web-card-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                <span>공장 대용량 ESS 및 VPP 중앙 제어 패널</span>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div style="display:flex; flex-direction:column; gap: 10px;">
+                                    <span style="font-size:0.68rem; color:var(--text-secondary); font-weight: bold;">AI 지능형 제어 설정</span>
+                                    
+                                    <div class="web-toggle-card">
+                                        <div>
+                                            <div style="font-weight:bold;">VPP AI 실시간 자동 입찰 거래</div>
+                                            <div style="font-size:0.55rem; color:var(--text-secondary); margin-top:2px;">출력제어 발생 시 잉여 전력 자동 흡수</div>
+                                        </div>
+                                        <label class="toggle-switch-input">
+                                            <input type="checkbox" id="web-opt-auto" checked onchange="logWebAction('실시간 자동 입찰 연동')">
+                                            <span class="toggle-switch-slider"></span>
+                                        </label>
+                                    </div>
+
+                                    <div class="web-toggle-card">
+                                        <div>
+                                            <div style="font-weight:bold;">사내 EV 차량 전력 자동 분배</div>
+                                            <div style="font-size:0.55rem; color:var(--text-secondary); margin-top:2px;">주행 패턴 맞춤 잔여 보존 관리</div>
+                                        </div>
+                                        <label class="toggle-switch-input">
+                                            <input type="checkbox" id="web-opt-routing" checked onchange="logWebAction('사내 EV 전력 분배 연동')">
+                                            <span class="toggle-switch-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div style="display:flex; flex-direction:column; gap: 10px;">
+                                    <span style="font-size:0.68rem; color:var(--text-secondary); font-weight: bold;">대용량 ESS 충전 상태 모니터</span>
+                                    
+                                    <div class="web-ess-gauge-card">
+                                        <div style="display:flex; justify-content:space-between; font-size:0.7rem;">
+                                            <span style="color:var(--text-secondary);">실시간 충전 잔량 (SoC)</span>
+                                            <strong style="color:var(--neon-blue);" id="web-ess-soc-val">48.2%</strong>
+                                        </div>
+                                        <div class="web-ess-track">
+                                            <div class="web-ess-fill" id="web-ess-bar-fill" style="width: 48.2%;"></div>
+                                            <div class="web-ess-target-line" id="web-ess-target-line" style="left: 90%;"></div>
+                                        </div>
+                                        <div style="display:flex; justify-content:space-between; font-size:0.55rem; color:var(--text-secondary);">
+                                            <span>방전보호 하한선: 20%</span>
+                                            <span style="color:var(--neon-orange);" id="web-ess-target-lbl">목표 설정선: 90%</span>
+                                        </div>
+                                        <div class="web-ess-btn-row">
+                                            <button class="web-ess-btn" id="we-btn-80" onclick="webSetTargetEss(80)">80% 목표</button>
+                                            <button class="web-ess-btn active" id="we-btn-90" onclick="webSetTargetEss(90)">90% 목표</button>
+                                            <button class="web-ess-btn" id="we-btn-100" onclick="webSetTargetEss(100)">100% 가득</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                    </div>
+
+                    <!-- Right Column (1 Span): Safety Guard Reports -->
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        
+                        <section class="web-card" style="height: 100%; justify-content: space-between;">
+                            <div>
+                                <div class="web-card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    <span>세이프티 가드 실시간 진단</span>
+                                </div>
+
+                                <div style="display:flex; flex-direction:column; gap:16px; margin-top:10px;">
+                                    <div class="web-safety-summary">
+                                        <div class="web-gauge-ring" id="web-safety-ring">
+                                            <span class="web-gauge-ring-val" id="web-safety-score">98</span>
+                                            <span class="web-gauge-ring-lbl" id="web-safety-grade">SAFE A</span>
+                                        </div>
+                                        <div class="web-safety-details">
+                                            <strong style="color:#fff;" id="web-safety-headline">종합 안전성 지수 매우 양호</strong>
+                                            <p style="font-size:0.58rem; color:var(--text-secondary); margin-top:3px;" id="web-safety-list-desc">
+                                                • ESS 배터리 온도: 26.5°C (안정)<br>
+                                                • 충방전 모니터링: 특이 이상 무<br>
+                                                • 감전/누전 센서: 기상 이변 없음
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="web-alert-banner" id="web-safety-banner">
+                                        <span style="font-size:1rem;" id="web-safety-banner-icon">✓</span>
+                                        <div>
+                                            <strong id="web-safety-banner-title">에너지 관리 리스크 통제 안정</strong>
+                                            <p style="font-size: 0.58rem; color: var(--text-secondary); margin-top:2px;" id="web-safety-banner-desc">현재 충방전 상태가 안정선 내에 위치하고 있습니다. V2G 출력을 정상 수행 중입니다.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onclick="openSafetyModal()" id="web-safety-trigger-btn" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); color:#fff; padding:10px; border-radius:10px; font-weight:bold; font-size:0.75rem; cursor:pointer; transition:all 0.2s;">
+                                안전 가드 조치 모달 열기
+                            </button>
+                        </section>
+
+                    </div>
+
+                </div>
+
+                <!-- Web Portal Emergency Modal Layout -->
+                <div class="web-modal-overlay" id="web-safety-modal" style="display: none;">
+                    <div class="web-modal-box" id="web-modal-box-card">
+                        <div class="web-modal-header">
+                            <span style="font-size:1.4rem;">🚨</span>
+                            <h3 style="font-size: 1rem; font-weight: 800; color: var(--neon-red);" id="web-modal-title">CRITICAL SAFETY ALERT</h3>
+                        </div>
+
+                        <div class="web-modal-grid">
+                            <div class="web-modal-info">
+                                <div class="web-modal-label">대상 사업장</div>
+                                <div class="web-modal-val" id="web-modal-factory">호남 에너지 밸리 1공장</div>
+                            </div>
+                            <div class="web-modal-info">
+                                <div class="web-modal-label">기상 위험 원인</div>
+                                <div class="web-modal-val" id="web-modal-weather">⛈️ 폭우 경보</div>
+                            </div>
+                            <div class="web-modal-info">
+                                <div class="web-modal-label">과거 사고 연동 리스크 지수</div>
+                                <div class="web-modal-val" style="color:var(--neon-red);" id="web-modal-risk">위험도 +40% 상승</div>
+                            </div>
+                            <div class="web-modal-info">
+                                <div class="web-modal-label">V2G 방전 상한 제안</div>
+                                <div class="web-modal-val" style="color:var(--neon-blue);" id="web-modal-limit">최대 40% 이하</div>
+                            </div>
+                        </div>
+
+                        <div class="web-modal-desc" id="web-modal-desc">
+                            재해 예측 AI 모델이 현재 현장 기상 상태와 V2G 송전 스케줄을 분석했습니다. 폭우로 인한 침수 우려 상황에서 고압 V2G 방전을 과도하게 유지할 경우 배터리 과열 및 감전 사고 발생률이 과거 데이터 패턴상 40% 이상 상승합니다. 사고 방지를 위해 방전 출력 제한 조치를 즉각 승인하십시오.
+                        </div>
+
+                        <div class="web-modal-actions">
+                            <div class="web-modal-action-row">
+                                <div>
+                                    <div style="font-weight:bold;">V2G 방전 전력 40% 상한 제한 제어</div>
+                                    <span style="font-size:0.55rem; color:var(--text-secondary);">전기차 주차타워 V2G 출력 상한을 즉시 차단합니다.</span>
+                                </div>
+                                <button class="web-modal-btn" id="w-btn-limit" onclick="webApproveLimit()">긴급 제어 승인</button>
+                            </div>
+                            
+                            <div class="web-modal-action-row">
+                                <div>
+                                    <div style="font-weight:bold;">근무자 대피 및 대처 가이드 SOP 전송</div>
+                                    <span style="font-size:0.55rem; color:var(--text-secondary);">단지 내 근무자 스마트폰으로 행동 수칙을 푸시 전송합니다.</span>
+                                </div>
+                                <button class="web-modal-btn" id="w-btn-sop" onclick="webSendSOP()">SOP 일괄 발송</button>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:flex-end;">
+                            <button onclick="closeSafetyModal()" style="background:transparent; border:1px solid rgba(255,255,255,0.08); color:var(--text-secondary); font-size:0.7rem; padding:8px 16px; border-radius:8px; cursor:pointer;">닫기</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- Right Controller Sidebar -->
+        <aside class="simulator-controller">
+            
+            <!-- Global Scenario presets -->
+            <div style="display:flex; flex-direction:column; gap: 8px;">
+                <div class="sim-section-title">글로벌 시나리오 조종탑</div>
+                <div class="preset-column">
+                    <button class="sim-preset-btn active" id="sim-btn-day" onclick="runGlobalScenario('day')" style="--btn-accent: var(--neon-green); --btn-bg: rgba(0, 255, 136, 0.05);">
+                        <span class="sim-preset-title" style="color: var(--neon-green);">☀️ [낮] 태양광 과잉 충전</span>
+                        <span class="sim-preset-desc">출력제어 예측 시간 가용 전기차 충전 단가 70% 인하 (65원)로 전력 흡수</span>
+                    </button>
+                    
+                    <button class="sim-preset-btn" id="sim-btn-night" onclick="runGlobalScenario('night')" style="--btn-accent: var(--neon-orange); --btn-bg: rgba(255, 157, 0, 0.05);">
+                        <span class="sim-preset-title" style="color: var(--neon-orange);">🌙 [밤] 전력 수요 피크 역판매</span>
+                        <span class="sim-preset-desc">수요 급증 구간 퇴근 차량 배터리 전력 비싼 단가(240원)에 V2G 역송전 및 수익 창출</span>
+                    </button>
+
+                    <button class="sim-preset-btn" id="sim-btn-disaster" onclick="runGlobalScenario('disaster')" style="--btn-accent: var(--neon-red); --btn-bg: rgba(255, 60, 60, 0.06);">
+                        <span class="sim-preset-title" style="color: var(--neon-red);">⛈️ [위험] 폭우 경보 & 안전 가드</span>
+                        <span class="sim-preset-desc">기상 악화로 ESS 과열 및 감전사고 리스크 증가 감지 ➔ V2G 자동 강제 한도 제한 통제</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard live synchronized indicators -->
+            <div style="display:flex; flex-direction:column; gap: 8px;">
+                <div class="sim-section-title">관제 시스템 종합 모니터</div>
+                <div class="sim-info-card">
+                    <div class="sim-info-row">
+                        <span style="color:var(--text-secondary);">VPP 기준 요금</span>
+                        <strong style="color: var(--neon-green);" id="monitor-tariff">65원 / kWh</strong>
+                    </div>
+                    <div class="sim-info-row">
+                        <span style="color:var(--text-secondary);">계통 안전 지수</span>
+                        <strong style="color: var(--neon-green);" id="monitor-safety">98점 (A등급)</strong>
+                    </div>
+                    <div class="sim-info-row">
+                        <span style="color:var(--text-secondary);">누적 재정 절감액</span>
+                        <strong id="monitor-revenue" style="color:#fff;">₩4,289,000</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event console logger -->
+            <div class="sim-console-card">
+                <div class="sim-section-title">실시간 AI 관제 통제 피드</div>
+                <div class="sim-console" id="sim-console-logs">
+                    <!-- Logs appended here -->
+                </div>
+            </div>
+
+        </aside>
+
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        const state = {
+            activePlatform: 'mobile', // 'mobile' | 'web'
+            activePhoneTab: 'DASHBOARD', // 'DASHBOARD' | 'AI_SETTINGS'
+            time: 'day',
+            weather: 'sunny',
+            safetyLevel: 'safe',
+            minSafetySoc: 30,
+            essTargetSoc: 90,
+            financialSavings: 4289000
+        };
+
+        // App/Web Console log appender
+        function addConsoleLog(tagType, message) {
+            const consoleEl = document.getElementById('sim-console-logs');
+            if(!consoleEl) return;
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            
+            let tagClass = 'tag-vpp';
+            let tagText = 'VPP';
+            if (tagType === 'ai') { tagClass = 'tag-ai'; tagText = 'AI'; }
+            else if (tagType === 'safety') { tagClass = 'tag-safety'; tagText = 'SAFETY'; }
+            else if (tagType === 'alert') { tagClass = 'tag-alert'; tagText = 'ALERT'; }
+
+            const row = document.createElement('div');
+            row.className = 'sim-log-row';
+            row.innerHTML = `<span class="sim-log-time">${timeStr}</span><span class="sim-log-tag ${tagClass}">[${tagText}]</span><span>${message}</span>`;
+            
+            consoleEl.appendChild(row);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        // Toggle mobile vs web view
+        function switchPlatform(platform) {
+            state.activePlatform = platform;
+            
+            document.getElementById('btn-switch-mobile').classList.toggle('active', platform === 'mobile');
+            document.getElementById('btn-switch-web').classList.toggle('active', platform === 'web');
+            
+            document.getElementById('plat-mobile-view').style.display = platform === 'mobile' ? 'flex' : 'none';
+            document.getElementById('plat-web-view').style.display = platform === 'web' ? 'flex' : 'none';
+            
+            addConsoleLog('ai', `관리자 모니터 뷰 변경 ➔ [${platform === 'mobile' ? 'EV 모바일 앱' : '공장 웹 콘솔'}]`);
+        }
+
+        // Phone screen sub-tabs toggling
+        function phoneSwitchTab(tabKey) {
+            state.activePhoneTab = tabKey;
+            
+            document.getElementById('p-tab-dash').classList.toggle('active', tabKey === 'DASHBOARD');
+            document.getElementById('p-tab-settings').classList.toggle('active', tabKey === 'AI_SETTINGS');
+            
+            document.getElementById('phone-view-dash').style.display = tabKey === 'DASHBOARD' ? 'flex' : 'none';
+            document.getElementById('phone-view-settings').style.display = tabKey === 'AI_SETTINGS' ? 'flex' : 'none';
+            
+            addConsoleLog('vpp', `모바일 내부 화면 전환 ➔ [${tabKey === 'DASHBOARD' ? '홈 대시보드' : 'AI 스마트 설정'}]`);
+        }
+
+        // Mobile actions log helper
+        function logPhoneAction(desc) {
+            addConsoleLog('ai', `[모바일] 사용자 설정 변경: ${desc}`);
+        }
+
+        // Web actions log helper
+        function logWebAction(desc) {
+            addConsoleLog('vpp', `[웹 콘솔] 자동 가동 옵션 토글: ${desc}`);
+        }
+
+        // Mobile slider setting simulation
+        function phoneSetLimit(limit) {
+            state.minSafetySoc = limit;
+            
+            const btns = ['20', '30', '40', '50'];
+            btns.forEach(b => {
+                document.getElementById(`ps-btn-${b}`).classList.toggle('active', parseInt(b) === limit);
+            });
+            
+            // Adjust visual slider knobs
+            document.getElementById('phone-slider-fill-width').style.width = `${limit}%`;
+            document.getElementById('phone-slider-knob-left').style.left = `${limit}%`;
+            
+            // Sync dashboard protect line
+            document.getElementById('phone-soc-protect-line').style.left = `${limit}%`;
+            document.getElementById('phone-soc-protect-lbl').textContent = `최소 보호 한선: ${limit}%`;
+            document.getElementById('phone-soc-protect-lbl').style.color = limit >= 40 ? 'var(--neon-red)' : 'var(--neon-orange)';
+            
+            addConsoleLog('ai', `[모바일] 배터리 최소 세이프가드 보호선을 [${limit}%]로 변경했습니다.`);
+        }
+
+        // Web ESS target charging control
+        function webSetTargetEss(target) {
+            state.essTargetSoc = target;
+            
+            const targets = ['80', '90', '100'];
+            targets.forEach(t => {
+                document.getElementById(`we-btn-${t}`).classList.toggle('active', parseInt(t) === target);
+            });
+            
+            // Shift visual yellow lines
+            document.getElementById('web-ess-target-line').style.left = `${target}%`;
+            document.getElementById('web-ess-target-lbl').textContent = `목표 설정선: ${target}%`;
+            
+            addConsoleLog('vpp', `[웹 콘솔] ESS 배터리 최종 목표 충전율을 [${target}%]로 조절했습니다.`);
+        }
+
+        // Interactive modal triggers
+        function openSafetyModal() {
+            document.getElementById('web-safety-modal').style.display = 'flex';
+            addConsoleLog('safety', '안전 제어 수칙 관리 대화창이 오픈되었습니다.');
+        }
+
+        function closeSafetyModal() {
+            document.getElementById('web-safety-modal').style.display = 'none';
+        }
+
+        function webApproveLimit() {
+            const btn = document.getElementById('w-btn-limit');
+            btn.className = 'web-modal-btn success';
+            btn.textContent = '✓ 제어 완료';
+            btn.disabled = true;
+            
+            // Sync states
+            addConsoleLog('safety', '[웹 제어] V2G 충방전 한도 제한 제어 요청이 한전 및 VPP 게이트웨이에 승인 반영되었습니다.');
+        }
+
+        function webSendSOP() {
+            const btn = document.getElementById('w-btn-sop');
+            btn.className = 'web-modal-btn success';
+            btn.textContent = '✓ 발송 완료';
+            btn.disabled = true;
+            
+            addConsoleLog('safety', '[안전 알림] 사내 모바일 기기망을 통해 현장 임직원에게 대처 요령(SOP)을 발송했습니다.');
+        }
+
+        // Phone App Promotion Modal trigger simulation
+        function approvePhonePromo() {
+            document.getElementById('phone-promo-modal').style.display = 'none';
+            document.getElementById('phone-opt-charge').checked = true;
+            state.financialSavings += 3000;
+            addConsoleLog('ai', '[모바일] 차주가 내일 낮 시간 70% 할인 충전 스케줄링 승인에 동의했습니다.');
+        }
+
+        function declinePhonePromo() {
+            document.getElementById('phone-promo-modal').style.display = 'none';
+            addConsoleLog('ai', '[모바일] 차주가 할인 충전 스케줄 제안을 보류했습니다.');
+        }
+
+        // Global Simulation presets engine
+        function runGlobalScenario(scenario) {
+            // Preset button styling reset
+            const btns = ['day', 'night', 'disaster'];
+            btns.forEach(b => {
+                document.getElementById(`sim-btn-${b}`).classList.remove('active');
+            });
+            document.getElementById(`sim-btn-${scenario}`).classList.add('active');
+
+            // Elements references
+            const monitorTariff = document.getElementById('monitor-tariff');
+            const monitorSafety = document.getElementById('monitor-safety');
+            const phoneTariff = document.getElementById('phone-status-tariff');
+            const phoneBatteryFill = document.getElementById('phone-battery-fill');
+            const phoneConnBadge = document.getElementById('phone-conn-badge');
+            
+            const phoneSocText = document.getElementById('phone-soc-text');
+            const phoneSocBarFill = document.getElementById('phone-soc-bar-fill');
+            const phoneSocActionLbl = document.getElementById('phone-soc-action-lbl');
+            
+            const webEssSocVal = document.getElementById('web-ess-soc-val');
+            const webEssBarFill = document.getElementById('web-ess-bar-fill');
+            
+            const webSafetyRing = document.getElementById('web-safety-ring');
+            const webSafetyScore = document.getElementById('web-safety-score');
+            const webSafetyGrade = document.getElementById('web-safety-grade');
+            const webSafetyHeadline = document.getElementById('web-safety-headline');
+            const webSafetyListDesc = document.getElementById('web-safety-list-desc');
+            const webSafetyBanner = document.getElementById('web-safety-banner');
+            const webSafetyBannerIcon = document.getElementById('web-safety-banner-icon');
+            const webSafetyBannerTitle = document.getElementById('web-safety-banner-title');
+            const webSafetyBannerDesc = document.getElementById('web-safety-banner-desc');
+            
+            const phoneV2gBlock = document.getElementById('phone-v2g-block');
+            const phoneV2gBadge = document.getElementById('phone-v2g-badge');
+            const phoneV2gDesc = document.getElementById('phone-v2g-desc');
+            const phoneV2gTariff = document.getElementById('phone-v2g-tariff');
+
+            // Reset dialog buttons in modal
+            const wBtnLimit = document.getElementById('w-btn-limit');
+            wBtnLimit.className = 'web-modal-btn';
+            wBtnLimit.textContent = '긴급 제어 승인';
+            wBtnLimit.disabled = false;
+
+            const wBtnSop = document.getElementById('w-btn-sop');
+            wBtnSop.className = 'web-modal-btn';
+            wBtnSop.textContent = 'SOP 일괄 발송';
+            wBtnSop.disabled = false;
+
+            const modalBox = document.getElementById('web-modal-box-card');
+            modalBox.className = 'web-modal-box';
+
+            if (scenario === 'day') {
+                state.time = 'day';
+                state.weather = 'sunny';
+                state.safetyLevel = 'safe';
+                
+                // Indicators updates
+                monitorTariff.textContent = '65원 / kWh';
+                monitorTariff.style.color = 'var(--neon-green)';
+                monitorSafety.textContent = '98점 (A등급)';
+                monitorSafety.style.color = 'var(--neon-green)';
+                
+                phoneTariff.textContent = '65원';
+                phoneTariff.style.color = 'var(--neon-green)';
+                phoneBatteryFill.style.width = '80%';
+                phoneBatteryFill.style.backgroundColor = 'var(--neon-green)';
+                
+                phoneConnBadge.style.borderColor = 'var(--neon-green)';
+                phoneConnBadge.style.background = 'rgba(0, 255, 136, 0.05)';
+                phoneConnBadge.innerHTML = '<div style="width:5px; height:5px; background-color:#00ff88; border-radius:50%;"></div><span>V2G 커넥터 연결됨</span>';
+                
+                // Phone SoC info
+                phoneSocText.textContent = '77%';
+                phoneSocBarFill.style.width = '77%';
+                phoneSocActionLbl.textContent = '완속 충전 중';
+                phoneSocActionLbl.style.color = 'var(--neon-green)';
+                
+                // Web ESS SoC
+                webEssSocVal.textContent = '48.2%';
+                webEssBarFill.style.width = '48.2%';
+                webEssBarFill.style.background = 'linear-gradient(to right, rgba(0,210,255,0.2), var(--neon-blue))';
+                
+                // Safety UI
+                webSafetyRing.style.borderColor = 'var(--neon-green)';
+                webSafetyRing.style.boxShadow = '0 0 8px var(--neon-green-glow)';
+                webSafetyScore.textContent = '98';
+                webSafetyGrade.textContent = 'SAFE A';
+                webSafetyGrade.style.color = 'var(--neon-green)';
+                webSafetyHeadline.textContent = '종합 안전성 지수 매우 양호';
+                webSafetyListDesc.innerHTML = `
+                    • ESS 배터리 온도: 26.5°C (안정)<br>
+                    • 충방전 모니터링: 특이 이상 무<br>
+                    • 감전/누전 센서: 기상 이변 없음
+                `;
+                
+                webSafetyBanner.className = 'web-alert-banner';
+                webSafetyBannerIcon.textContent = '✓';
+                webSafetyBannerIcon.style.color = 'var(--neon-green)';
+                webSafetyBannerTitle.textContent = '에너지 관리 리스크 통제 안정';
+                webSafetyBannerDesc.textContent = '현재 충방전 상태가 안정선 내에 위치하고 있습니다. V2G 출력을 정상 수행 중입니다.';
+                
+                // Mobile blocks
+                phoneV2gBlock.style.opacity = '1';
+                phoneV2gBadge.className = 'phone-badge-type phone-badge-discharge';
+                phoneV2gBadge.textContent = '역판매 방전 (V2G)';
+                phoneV2gDesc.textContent = '저녁 수요 피크 구간 계통 지원 방전으로 이득을 창출합니다.';
+                phoneV2gTariff.textContent = '240원 / kWh';
+                phoneV2gTariff.style.color = 'var(--neon-orange)';
+
+                document.getElementById('phone-notch-dot').className = 'notch-dot';
+                
+                // Show Phone push alert
+                setTimeout(() => {
+                    if (state.activePlatform === 'mobile') {
+                        document.getElementById('phone-promo-modal').style.display = 'flex';
+                    }
+                }, 1000);
+                
+                addConsoleLog('vpp', '☀️ 시나리오 작동: [낮] 태양광 과잉 공급 단계 가동.');
+                addConsoleLog('ai', '제주/호남 태양광 일사량 감지 ➔ VPP 연동 충전 단가 70% 할인 인하 단행.');
+                
+            } else if (scenario === 'night') {
+                state.time = 'night';
+                state.weather = 'sunny';
+                state.safetyLevel = 'safe';
+                
+                // Indicators updates
+                monitorTariff.textContent = '240원 / kWh';
+                monitorTariff.style.color = 'var(--neon-orange)';
+                monitorSafety.textContent = '98점 (A등급)';
+                monitorSafety.style.color = 'var(--neon-green)';
+                
+                phoneTariff.textContent = '240원';
+                phoneTariff.style.color = 'var(--neon-orange)';
+                phoneBatteryFill.style.width = '35%';
+                phoneBatteryFill.style.backgroundColor = 'var(--neon-orange)';
+                
+                phoneConnBadge.style.borderColor = 'var(--neon-orange)';
+                phoneConnBadge.style.background = 'rgba(255, 157, 0, 0.05)';
+                phoneConnBadge.innerHTML = '<div style="width:5px; height:5px; background-color:#ff9d00; border-radius:50%;"></div><span>V2G 활성 송전 중</span>';
+                
+                // Phone SoC Info
+                phoneSocText.textContent = '38%';
+                phoneSocBarFill.style.width = '38%';
+                phoneSocActionLbl.textContent = '역송전 방전 중 (V2G)';
+                phoneSocActionLbl.style.color = 'var(--neon-orange)';
+                
+                // Web ESS SoC
+                webEssSocVal.textContent = '35.4%';
+                webEssBarFill.style.width = '35.4%';
+                webEssBarFill.style.background = 'linear-gradient(to right, rgba(255,157,0,0.2), var(--neon-orange))';
+                
+                // Safety UI
+                webSafetyRing.style.borderColor = 'var(--neon-green)';
+                webSafetyRing.style.boxShadow = '0 0 8px var(--neon-green-glow)';
+                webSafetyScore.textContent = '98';
+                webSafetyGrade.textContent = 'SAFE A';
+                webSafetyGrade.style.color = 'var(--neon-green)';
+                webSafetyHeadline.textContent = '종합 안전성 지수 매우 양호';
+                webSafetyListDesc.innerHTML = `
+                    • ESS 배터리 온도: 28.1°C (정상)<br>
+                    • 충방전 모니터링: 특이 이상 무<br>
+                    • 감전/누전 센서: 기상 이변 없음
+                `;
+                
+                webSafetyBanner.className = 'web-alert-banner';
+                webSafetyBannerIcon.textContent = '✓';
+                webSafetyBannerIcon.style.color = 'var(--neon-green)';
+                webSafetyBannerTitle.textContent = '피크 부하대 전송 활성화';
+                webSafetyBannerDesc.textContent = '계통 부하 방지를 위한 전력망 V2G 분산 송전이 전량 개방되어 작동 중입니다.';
+                
+                // Mobile blocks
+                phoneV2gBlock.style.opacity = '1';
+                phoneV2gBadge.className = 'phone-badge-type phone-badge-discharge';
+                phoneV2gBadge.textContent = '역판매 방전 (V2G)';
+                phoneV2gDesc.textContent = '저녁 수요 피크 구간 계통 지원 방전으로 이득을 창출합니다.';
+                phoneV2gTariff.textContent = '240원 / kWh';
+                phoneV2gTariff.style.color = 'var(--neon-orange)';
+
+                document.getElementById('phone-notch-dot').className = 'notch-dot';
+                document.getElementById('phone-promo-modal').style.display = 'none';
+                
+                addConsoleLog('vpp', '🌙 시나리오 작동: [밤] 전력 수요 피크 역판매 단계 가동.');
+                addConsoleLog('ai', '공장 단지 내 전기차 V2G 역배전 활성화 ➔ 240원 단가로 매입 가동.');
+                
+            } else if (scenario === 'disaster') {
+                state.time = 'day';
+                state.weather = 'rainy';
+                state.safetyLevel = 'critical';
+                
+                // Indicators updates
+                monitorTariff.textContent = '220원 / kWh';
+                monitorTariff.style.color = '#fff';
+                monitorSafety.textContent = '58점 (C등급)';
+                monitorSafety.style.color = 'var(--neon-red)';
+                
+                phoneTariff.textContent = '220원';
+                phoneTariff.style.color = '#fff';
+                phoneBatteryFill.style.width = '77%';
+                phoneBatteryFill.style.backgroundColor = 'var(--neon-red)';
+                
+                phoneConnBadge.style.borderColor = 'var(--neon-red)';
+                phoneConnBadge.style.background = 'rgba(255, 60, 60, 0.05)';
+                phoneConnBadge.innerHTML = '<div style="width:5px; height:5px; background-color:#ff3c3c; border-radius:50%; animation: flash-dot 0.5s infinite alternate;"></div><span>V2G 방전 전격 제한</span>';
+                
+                // Phone SoC Info
+                phoneSocText.textContent = '77%';
+                phoneSocBarFill.style.width = '77%';
+                phoneSocActionLbl.textContent = '충방전 대기 (제한됨)';
+                phoneSocActionLbl.style.color = 'var(--neon-red)';
+                
+                // Web ESS SoC
+                webEssSocVal.textContent = '48.2%';
+                webEssBarFill.style.width = '48.2%';
+                webEssBarFill.style.background = 'linear-gradient(to right, rgba(255,60,60,0.2), var(--neon-red))';
+                
+                // Safety UI
+                webSafetyRing.style.borderColor = 'var(--neon-red)';
+                webSafetyRing.style.boxShadow = '0 0 12px var(--neon-red-glow)';
+                webSafetyScore.textContent = '58';
+                webSafetyGrade.textContent = 'WARN C';
+                webSafetyGrade.style.color = 'var(--neon-red)';
+                webSafetyHeadline.textContent = '폭우 경보 발령 (안전 통제)';
+                webSafetyListDesc.innerHTML = `
+                    • ESS 배터리 온도: 34.2°C (감시 요망)<br>
+                    • V2G 충방전 억제량: 정격 40% 이하 제안<br>
+                    • 침수 감지 센서: 3호 구역 경고
+                `;
+                
+                webSafetyBanner.className = 'web-alert-banner active-warning';
+                webSafetyBannerIcon.textContent = '⚠️';
+                webSafetyBannerIcon.style.color = 'var(--neon-red)';
+                webSafetyBannerTitle.textContent = '재해 리스크 감지: 안전 제어권 전환';
+                webSafetyBannerDesc.textContent = '강수 조건 속 고전압 방전은 사고 위험을 높입니다. 방전 출력을 제한하십시오.';
+                
+                // Mobile blocks
+                phoneV2gBlock.style.opacity = '0.5';
+                phoneV2gBadge.className = 'phone-badge-type phone-badge-discharge';
+                phoneV2gBadge.textContent = '역판매 제한 (40% 상한)';
+                phoneV2gDesc.textContent = '기상 악화로 인하여 V2G 방전 기능이 40% 이하로 제어 작동 중입니다.';
+                phoneV2gTariff.textContent = '제한됨';
+                phoneV2gTariff.style.color = 'var(--neon-red)';
+
+                document.getElementById('phone-notch-dot').className = 'notch-dot alert';
+                document.getElementById('phone-promo-modal').style.display = 'none';
+
+                // Open safety alert modal automatically if web view is chosen
+                if (state.activePlatform === 'web') {
+                    openSafetyModal();
+                    
+                    // Style modal box as critical red
+                    document.getElementById('web-modal-box-card').className = 'web-modal-box critical';
+                    document.getElementById('web-modal-title').textContent = 'CRITICAL SAFETY ALERT';
+                    document.getElementById('web-modal-title').style.color = 'var(--neon-red)';
+                } else {
+                    // If mobile view, trigger phone specific storm alert popup
+                    setTimeout(() => {
+                        alert('⛈️ [기상 긴급 재해 경보] 폭우 발생에 따른 V2G 감전 화재 예방 수칙 전송. 배터리 하한선 및 V2G 보호 모드가 원격 작동합니다.');
+                    }, 500);
+                }
+                
+                addConsoleLog('alert', '⛈️ 시나리오 작동: [재해] 폭우 경보 발령.');
+                addConsoleLog('safety', '침수센서 수위 변화 감지 ➔ 전력 제어권 비상 보존 스케줄로 자동 강제 이행.');
+            }
+
+            simulateGlobalSavings();
+        }
+
+        // Savings simulation ticking
+        let savingsInterval = null;
+        function simulateGlobalSavings() {
+            if (savingsInterval) clearInterval(savingsInterval);
+            
+            let rate = 15;
+            if (state.time === 'night') rate = 95;
+            if (state.weather === 'rainy') rate = 3;
+            
+            savingsInterval = setInterval(() => {
+                state.financialSavings += Math.floor(Math.random() * rate);
+                const val = '₩' + state.financialSavings.toLocaleString();
+                document.getElementById('monitor-revenue').textContent = val;
+                document.getElementById('phone-profit-val').textContent = val;
+            }, 3000);
+        }
+
+        // Inits
+        window.addEventListener('load', () => {
+            addConsoleLog('vpp', 'VPP 스마트 에너지 관제 센터 모니터 기동 완료.');
+            addConsoleLog('ai', '에너지 물가 및 드라이버 주행 패턴 인공지능 분석 파이프라인 동기화.');
+            addConsoleLog('safety', '침수 및 배터리 과열 세이프티 가드 통신 연결 완료.');
+            
+            // Baseline Day scenario
+            runGlobalScenario('day');
+        });
+    </script>
+</body>
+</html>
